@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บันทึกสถานะพักเที่ยง (ฉบับสีแผนก)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f0f8ff; /* สีฟ้าอ่อนสบายตา */
+            color: #343a40;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #1976d2;
+        }
+
+        /* --- ปุ่มควบคุมหลักและรีเซ็ต --- */
+        #controlHeader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        #resetButton, #historyButton {
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.2s;
+        }
+
+        #resetButton {
+            background-color: #ffc107; /* เหลือง */
+            color: #343a40;
+        }
+
+        #historyButton {
+            background-color: #6c757d; /* เทา */
+            color: white;
+        }
+
+        /* --- ส่วนตารางสถานะ --- */
+        #statusTable {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        #statusTable th, #statusTable td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        #statusTable th {
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        /* จัดตำแหน่งคอลัมน์เวลาให้อยู่ตรงกลาง */
+        #statusTable td:nth-child(4),
+        #statusTable td:nth-child(5),
+        #statusTable td:nth-child(6),
+        #statusTable td:nth-child(7) { 
+            text-align: center;
+        }
+        
+        /* การเน้นสถานะ */
+        .status-available {
+            color: #198754; 
+            font-weight: bold;
+        }
+        .status-lunch {
+            color: #dc3545; 
+            font-weight: bold;
+        }
+        
+        /* สไตล์ปุ่มในตาราง */
+        .lunch-button {
+            padding: 5px 10px;
+            font-size: 0.9em;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            width: 120px; 
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-go { background-color: #dc3545; } 
+        .btn-go:hover { background-color: #c82333; }
+
+        .btn-back { background-color: #28a745; } 
+        .btn-back:hover { background-color: #1e7e34; }
+
+        /* --- สีพื้นหลังตามแผนก (เน้นความต่างของสี) --- */
+        .dept-sausage { background-color: #ffe0e0; } /* ชมพูอ่อน */
+        .dept-sushi { background-color: #e0f0ff; }    /* ฟ้าอ่อน */
+        .dept-veggie { background-color: #e0ffec; }   /* เขียวมิ้นท์อ่อน */
+        .dept-bakery { background-color: #fffbe0; }   /* เหลืองครีมอ่อน */
+        .dept-dairy { background-color: #f0e0ff; }    /* ม่วงลาเวนเดอร์อ่อน */
+        .dept-meat { background-color: #ffc2c2; }     /* แดงอ่อน */
+        .dept-seafood { background-color: #e0fff9; }  /* เขียวทะเลอ่อน */
+        
+        /* สลับสีแถวเพื่อให้อ่านง่ายขึ้นภายในแผนกเดียวกัน */
+        .dept-sausage:nth-child(odd) { background-color: #ffd0d0; } 
+        .dept-sushi:nth-child(odd) { background-color: #c8e8ff; } 
+        .dept-veggie:nth-child(odd) { background-color: #c8ffe0; } 
+        .dept-bakery:nth-child(odd) { background-color: #fff5c8; } 
+        .dept-dairy:nth-child(odd) { background-color: #e8d0ff; }
+        .dept-meat:nth-child(odd) { background-color: #ffadad; }
+        .dept-seafood:nth-child(odd) { background-color: #c8fff5; }
+
+        /* --- Modal (กล่องแสดงประวัติ) --- */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.6); 
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        #historyContent pre {
+            white-space: pre-wrap;
+            background-color: #eee;
+            padding: 15px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ระบบบันทึกสถานะพักเที่ยงพนักงาน</h1>
+
+    <div id="controlHeader">
+        <button id="resetButton" onclick="resetAllStatusesWithCode()">
+            ⚠️ รีเซ็ตสถานะทั้งหมด (รหัสผ่าน)
+        </button>
+        <button id="historyButton" onclick="showHistory()">
+            📚 ดูบันทึกย้อนหลัง
+        </button>
+    </div>
+    
+    <h2>สถานะปัจจุบันของพนักงานทั้งหมด</h2>
+    <table id="statusTable">
+        <thead>
+            <tr>
+                <th>ชื่อพนักงาน</th>
+                <th>แผนก</th>
+                <th>สถานะ</th>
+                <th>เวลาไปพัก</th>
+                <th>เวลากลับ</th>
+                <th>รวมเวลาพัก</th>
+                <th>ควบคุม</th> 
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>บันทึกย้อนหลัง (ข้อมูลก่อนรีเซ็ต)</h2>
+            <div id="historyContent">
+                <p>กำลังโหลด...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ค่าคงที่ ---
+        const EMPLOYEES_DATA = [
+            // แผนกไส้กรอก-แฮม
+            { id: 'sausage_1', name: 'รวิวรรณ ชำนานเพาะ', dept: 'ไส้กรอก-แฮม', class: 'dept-sausage' },
+            { id: 'sausage_2', name: 'พัชรี สุขแสวง', dept: 'ไส้กรอก-แฮม', class: 'dept-sausage' },
+            // แผนกอาหารญี่ปุ่น
+            { id: 'sushi_1', name: 'ศิริธร ชัยเวทย์', dept: 'อาหารญี่ปุ่น', class: 'dept-sushi' },
+            { id: 'sushi_2', name: 'ธีรวัฒน์ บัวแก้ว', dept: 'อาหารญี่ปุ่น', class: 'dept-sushi' },
+            // แผนกผักผลไม้
+            { id: 'veggie_1', name: 'ฮาบีบะ โดโซมิ', dept: 'ผักผลไม้', class: 'dept-veggie' },
+            { id: 'veggie_2', name: 'มารีนา ดั้นดี', dept: 'ผักผลไม้', class: 'dept-veggie' },
+            // แผนกเบเกอรี่
+            { id: 'bakery_1', name: 'สรินยา สาริยา', dept: 'เบเกอรี่', class: 'dept-bakery' },
+            // แผนกนม-ชีส
+            { id: 'dairy_1', name: 'นาศริญ โมง', dept: 'นม-ชีส', class: 'dept-dairy' },
+            { id: 'dairy_2', name: 'อัสวาน อาแว', dept: 'นม-ชีส', class: 'dept-dairy' },
+            // แผนกเนื้อ
+            { id: 'meat_1', name: 'จักรกริช สมาน', dept: 'เนื้อ', class: 'dept-meat' },
+            // แผนกซีฟู้ด
+            { id: 'seafood_1', name: 'อิสมาแอ สาเล็ง', dept: 'ซีฟู้ด', class: 'dept-seafood' },
+        ];
+        
+        const LOCAL_STORAGE_KEY = 'employeeLunchStatusV4';
+        const HISTORY_KEY = 'employeeLunchHistory';
+        const LAST_RESET_KEY = 'lastResetDate';
+        const RESET_PASSWORD = '254130'; 
+
+        let allStatuses = {}; 
+
+        // --- ฟังก์ชันช่วยเหลือเกี่ยวกับเวลา ---
+
+        function formatTime(dateString) {
+            if (!dateString) return '-';
+            try {
+                const d = new Date(dateString);
+                if (isNaN(d.getTime())) return '-';
+                return d.toLocaleTimeString('th-TH', { 
+                    hour: '2-digit', 
+                    minute: '2-digit', 
+                    second: '2-digit' 
+                });
+            } catch (e) { return '-'; }
+        }
+
+        function calculateDuration(startTimeString, endTimeString) {
+            if (!startTimeString || !endTimeString) return '-';
+            
+            const startDate = new Date(startTimeString);
+            const endDate = new Date(endTimeString);
+            
+            const durationMs = endDate - startDate;
+            if (durationMs < 0) return 'ข้อผิดพลาดเวลา';
+            
+            const hours = Math.floor(durationMs / (1000 * 60 * 60));
+            const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((durationMs % (1000 * 60)) / 1000);
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function getTodayDateString() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // --- ฟังก์ชันจัดการ Local Storage และสถานะ ---
+        
+        function getInitialStatus() {
+            return { 
+                isAvailable: true, 
+                lunchStart: null, 
+                lunchEnd: null,
+                duration: '-'
+            };
+        }
+
+        function loadAllStatuses() {
+            const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+            try {
+                allStatuses = savedData ? JSON.parse(savedData) : {};
+            } catch (e) {
+                allStatuses = {};
+            }
+            
+            EMPLOYEES_DATA.forEach(emp => {
+                if (!allStatuses[emp.id]) {
+                    allStatuses[emp.id] = getInitialStatus();
+                }
+            });
+        }
+
+        function saveAllStatuses() {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allStatuses));
+        }
+
+        // --- ฟังก์ชันรีเซ็ตและบันทึกประวัติ ---
+        
+        function resetAllStatusesWithCode() {
+            const inputCode = prompt("กรุณาป้อนรหัสผ่านเพื่อรีเซ็ตสถานะทั้งหมด:");
+            
+            if (inputCode === RESET_PASSWORD) {
+                if (confirm("คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตสถานะของพนักงานทุกคน?")) {
+                    performReset(true);
+                    alert("รีเซ็ตสถานะทั้งหมดเรียบร้อยแล้ว!");
+                }
+            } else if (inputCode !== null) {
+                alert("รหัสผ่านไม่ถูกต้อง! ไม่สามารถรีเซ็ตได้");
+            }
+        }
+        
+        function performReset(isManual) {
+            if (!isManual) {
+                const lastResetDate = localStorage.getItem(LAST_RESET_KEY);
+                if (lastResetDate === getTodayDateString()) {
+                    return; 
+                }
+            }
+
+            const historyRecord = {
+                date: new Date().toISOString(),
+                statusData: allStatuses
+            };
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(historyRecord));
+
+            EMPLOYEES_DATA.forEach(emp => {
+                allStatuses[emp.id] = getInitialStatus();
+            });
+            
+            saveAllStatuses();
+            localStorage.setItem(LAST_RESET_KEY, getTodayDateString());
+            updateTable();
+        }
+
+        function checkAutoReset() {
+            const now = new Date();
+            const lastResetDate = localStorage.getItem(LAST_RESET_KEY);
+            
+            if (lastResetDate !== getTodayDateString() && now.getHours() === 0 && now.getMinutes() === 0) {
+                performReset(false);
+                console.log("Auto-reset completed at 00:00.");
+            }
+        }
+        
+        // --- ฟังก์ชันแสดงประวัติย้อนหลัง ---
+        
+        function showHistory() {
+            const historyData = localStorage.getItem(HISTORY_KEY);
+            const contentDiv = document.getElementById('historyContent');
+            const modal = document.getElementById('historyModal');
+            
+            if (!historyData) {
+                contentDiv.innerHTML = '<p>ไม่พบบันทึกย้อนหลังล่าสุด</p>';
+            } else {
+                const record = JSON.parse(historyData);
+                let historyHTML = `<h3>ข้อมูล ณ วันที่: ${new Date(record.date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</h3>`;
+                historyHTML += '<pre>';
+                
+                EMPLOYEES_DATA.forEach(emp => {
+                    const status = record.statusData[emp.id];
+                    if (status) {
+                        const start = formatTime(status.lunchStart);
+                        const end = formatTime(status.lunchEnd);
+                        const duration = status.duration;
+                        const finalStatus = status.isAvailable ? 'พร้อมทำงาน' : 'พักเที่ยง';
+
+                        historyHTML += `[${emp.dept}] ${emp.name}:\n`;
+                        historyHTML += `  สถานะสุดท้าย: ${finalStatus}\n`;
+                        historyHTML += `  เริ่มพัก: ${start}\n`;
+                        historyHTML += `  กลับ: ${end}\n`;
+                        historyHTML += `  รวมเวลาพัก: ${duration}\n\n`;
+                    }
+                });
+                
+                historyHTML += '</pre>';
+                contentDiv.innerHTML = historyHTML;
+            }
+            
+            modal.style.display = "block"; 
+        }
+
+        function closeModal() {
+            document.getElementById('historyModal').style.display = "none";
+        }
+
+        // --- ฟังก์ชันอัปเดต UI ---
+
+        function updateTable() {
+            const tbody = document.querySelector('#statusTable tbody');
+            tbody.innerHTML = ''; 
+            
+            const sortedEmployees = [...EMPLOYEES_DATA].sort((a, b) => a.dept.localeCompare(b.dept, 'th'));
+
+            sortedEmployees.forEach(emp => {
+                const status = allStatuses[emp.id];
+                const row = tbody.insertRow();
+                
+                // *** เพิ่ม Class สำหรับสีพื้นหลังแถว ***
+                row.className = emp.class;
+
+                const statusClass = status.isAvailable ? 'status-available' : 'status-lunch';
+                const statusText = status.isAvailable ? 'พร้อมทำงาน' : 'พักเที่ยง';
+                
+                // *** แสดงเฉพาะชื่อพนักงาน (ไม่มีอิโมจิ) ***
+                row.insertCell().textContent = emp.name;
+                
+                row.insertCell().textContent = emp.dept;
+                
+                const statusCell = row.insertCell();
+                statusCell.className = statusClass;
+                statusCell.textContent = statusText;
+
+                row.insertCell().textContent = formatTime(status.lunchStart);
+                row.insertCell().textContent = formatTime(status.lunchEnd);
+                row.insertCell().textContent = status.duration;
+
+                const controlCell = row.insertCell();
+                controlCell.innerHTML = createControlButton(emp.id, status.isAvailable);
+            });
+        }
+        
+        function createControlButton(employeeId, isAvailable) {
+            if (isAvailable) {
+                return `<button class="lunch-button btn-go" onclick="toggleStatus('${employeeId}', false)">
+                            ⏸️ ไปพัก
+                        </button>`;
+            } else {
+                return `<button class="lunch-button btn-back" onclick="toggleStatus('${employeeId}', true)">
+                            ▶️ กลับจากพัก
+                        </button>`;
+            }
+        }
+
+        // --- ฟังก์ชันหลักในการทำงาน ---
+        
+        function toggleStatus(employeeId, nextStatus) {
+            const now = new Date().toISOString(); 
+            let status = allStatuses[employeeId];
+            
+            if (status.isAvailable === nextStatus) return; 
+
+            status.isAvailable = nextStatus; 
+
+            if (!status.isAvailable) {
+                status.lunchStart = now;
+                status.lunchEnd = null; 
+                status.duration = 'กำลังพัก...';
+                
+            } else {
+                status.lunchEnd = now;
+                
+                if (status.lunchStart) {
+                    status.duration = calculateDuration(status.lunchStart, status.lunchEnd);
+                } else {
+                    status.duration = 'N/A (ขาดเวลาเริ่มต้น)';
+                }
+            }
+            
+            allStatuses[employeeId] = status;
+            saveAllStatuses(); 
+            updateTable(); 
+        }
+
+        // --- เริ่มต้นการทำงาน (Initialisation) ---
+        
+        loadAllStatuses(); 
+        updateTable(); 
+        
+        setInterval(checkAutoReset, 60000); 
+        checkAutoReset(); 
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('historyModal');
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>
