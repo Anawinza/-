@@ -3,18 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>บันทึกสถานะพักเที่ยง (ฉบับสีแผนก)</title>
+    <title>บันทึกสถานะพักเที่ยง (Responsive)</title>
     <style>
+        /* --- 1. สไตล์พื้นฐานสำหรับทุกขนาดหน้าจอ --- */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 20px;
-            background-color: #f0f8ff; /* สีฟ้าอ่อนสบายตา */
+            margin: 0;
+            padding: 10px;
+            background-color: #f0f8ff; 
             color: #343a40;
         }
 
         h1, h2 {
             text-align: center;
             color: #1976d2;
+            margin-top: 10px;
         }
 
         /* --- ปุ่มควบคุมหลักและรีเซ็ต --- */
@@ -22,29 +25,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap; /* ให้ปุ่มลงบรรทัดใหม่เมื่อหน้าจอเล็ก */
         }
         
         #resetButton, #historyButton {
-            padding: 10px 20px;
+            padding: 8px 15px;
             border-radius: 5px;
-            font-size: 1em;
+            font-size: 0.9em;
             cursor: pointer;
             border: none;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: opacity 0.2s;
         }
 
-        #resetButton {
-            background-color: #ffc107; /* เหลือง */
-            color: #343a40;
-        }
-
-        #historyButton {
-            background-color: #6c757d; /* เทา */
-            color: white;
-        }
+        #resetButton { background-color: #ffc107; color: #343a40; }
+        #historyButton { background-color: #6c757d; color: white; }
 
         /* --- ส่วนตารางสถานะ --- */
         #statusTable {
@@ -54,11 +50,13 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
             border-radius: 8px;
             overflow: hidden;
+            margin: 0 auto; /* จัดกึ่งกลางบนจอใหญ่ */
+            max-width: 900px; /* จำกัดความกว้างสูงสุด */
         }
 
         #statusTable th, #statusTable td {
             border: 1px solid #dee2e6;
-            padding: 12px;
+            padding: 10px;
             text-align: left;
             vertical-align: middle;
         }
@@ -78,42 +76,29 @@
             text-align: center;
         }
         
-        /* การเน้นสถานะ */
-        .status-available {
-            color: #198754; 
-            font-weight: bold;
-        }
-        .status-lunch {
-            color: #dc3545; 
-            font-weight: bold;
-        }
-        
         /* สไตล์ปุ่มในตาราง */
         .lunch-button {
-            padding: 5px 10px;
-            font-size: 0.9em;
+            padding: 5px 8px;
+            font-size: 0.85em; /* ลดขนาดปุ่มลงเล็กน้อย */
             border-radius: 4px;
             color: white;
             cursor: pointer;
-            transition: background-color 0.2s;
-            width: 120px; 
+            width: 100px; /* ลดความกว้างปุ่ม */
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            white-space: nowrap; /* ป้องกันปุ่มแตกบรรทัด */
         }
         
         .btn-go { background-color: #dc3545; } 
-        .btn-go:hover { background-color: #c82333; }
-
         .btn-back { background-color: #28a745; } 
-        .btn-back:hover { background-color: #1e7e34; }
-
-        /* --- สีพื้นหลังตามแผนก (เน้นความต่างของสี) --- */
-        .dept-sausage { background-color: #ffe0e0; } /* ชมพูอ่อน */
-        .dept-sushi { background-color: #e0f0ff; }    /* ฟ้าอ่อน */
-        .dept-veggie { background-color: #e0ffec; }   /* เขียวมิ้นท์อ่อน */
-        .dept-bakery { background-color: #fffbe0; }   /* เหลืองครีมอ่อน */
-        .dept-dairy { background-color: #f0e0ff; }    /* ม่วงลาเวนเดอร์อ่อน */
-        .dept-meat { background-color: #ffc2c2; }     /* แดงอ่อน */
-        .dept-seafood { background-color: #e0fff9; }  /* เขียวทะเลอ่อน */
+        
+        /* --- สีพื้นหลังตามแผนก (เหมือนเดิม) --- */
+        .dept-sausage { background-color: #ffe0e0; }
+        .dept-sushi { background-color: #e0f0ff; }
+        .dept-veggie { background-color: #e0ffec; }
+        .dept-bakery { background-color: #fffbe0; }
+        .dept-dairy { background-color: #f0e0ff; }
+        .dept-meat { background-color: #ffc2c2; }
+        .dept-seafood { background-color: #e0fff9; }
         
         /* สลับสีแถวเพื่อให้อ่านง่ายขึ้นภายในแผนกเดียวกัน */
         .dept-sausage:nth-child(odd) { background-color: #ffd0d0; } 
@@ -124,51 +109,85 @@
         .dept-meat:nth-child(odd) { background-color: #ffadad; }
         .dept-seafood:nth-child(odd) { background-color: #c8fff5; }
 
-        /* --- Modal (กล่องแสดงประวัติ) --- */
-        .modal {
-            display: none; 
-            position: fixed; 
-            z-index: 1000; 
-            left: 0;
-            top: 0;
-            width: 100%; 
-            height: 100%; 
-            background-color: rgba(0,0,0,0.6); 
-            padding-top: 60px;
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto; 
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%; 
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: #000;
-            text-decoration: none;
-            cursor: pointer;
-        }
+        /* --- Modal Styles (ไม่เปลี่ยนแปลง) --- */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); padding-top: 20px;}
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 600px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;}
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
+        .close:hover, .close:focus { color: #000; text-decoration: none; cursor: pointer; }
+        #historyContent pre { white-space: pre-wrap; background-color: #eee; padding: 15px; border-radius: 4px; font-size: 0.85em; }
         
-        #historyContent pre {
-            white-space: pre-wrap;
-            background-color: #eee;
-            padding: 15px;
-            border-radius: 4px;
-            font-size: 0.9em;
+        /* ========================================================== */
+        /* --- 2. MEDIA QUERY: สำหรับหน้าจอขนาดเล็ก (Mobile) --- */
+        /* ========================================================== */
+        @media screen and (max-width: 768px) {
+            
+            body {
+                padding: 5px;
+                font-size: 14px; /* ลดขนาดฟอนต์โดยรวม */
+            }
+
+            /* --- ทำให้ตารางแปลงเป็นรูปแบบ "บัตร" (Card View) --- */
+            #statusTable, #statusTable thead, #statusTable tbody, #statusTable th, #statusTable td, #statusTable tr {
+                display: block; /* ทำให้ทุกองค์ประกอบของตารางเป็น Block Level */
+            }
+
+            #statusTable thead tr {
+                position: absolute; /* ซ่อน Header (หัวตาราง) */
+                top: -9999px;
+                left: -9999px;
+            }
+
+            #statusTable tr {
+                border: 1px solid #ccc;
+                margin-bottom: 10px;
+                border-radius: 6px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+            #statusTable td {
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+                padding-left: 50%; /* เว้นที่ว่างสำหรับ Label */
+                text-align: right !important; /* จัดชิดขวาเพื่อให้ดูเป็นระเบียบ */
+                font-size: 1em;
+            }
+
+            #statusTable td:before {
+                /* เพิ่ม Label/Header เข้าไปแทนหัวตาราง */
+                position: absolute;
+                top: 0;
+                left: 6px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                color: #555;
+            }
+
+            /* กำหนด Label (ชื่อคอลัมน์) ให้แต่ละ Cell */
+            #statusTable tr td:nth-of-type(1):before { content: "ชื่อพนักงาน"; }
+            #statusTable tr td:nth-of-type(2):before { content: "แผนก"; }
+            #statusTable tr td:nth-of-type(3):before { content: "สถานะ"; }
+            #statusTable tr td:nth-of-type(4):before { content: "ไปพัก"; }
+            #statusTable tr td:nth-of-type(5):before { content: "กลับ"; }
+            #statusTable tr td:nth-of-type(6):before { content: "รวมเวลาพัก"; }
+            #statusTable tr td:nth-of-type(7):before { content: "ควบคุม"; }
+            
+            /* จัดรูปแบบปุ่มใน Card View */
+            #statusTable tr td:nth-of-type(7) {
+                text-align: left !important;
+                padding-left: 6px;
+                background-color: inherit;
+            }
+            #statusTable tr td:nth-of-type(7):before {
+                display: none; /* ซ่อน Label 'ควบคุม' */
+            }
+            .lunch-button {
+                width: 90%; /* ให้ปุ่มกว้างขึ้นเต็มพื้นที่ */
+                margin: 5px 0;
+            }
         }
     </style>
 </head>
@@ -215,23 +234,16 @@
     <script>
         // --- ค่าคงที่ ---
         const EMPLOYEES_DATA = [
-            // แผนกไส้กรอก-แฮม
             { id: 'sausage_1', name: 'รวิวรรณ ชำนานเพาะ', dept: 'ไส้กรอก-แฮม', class: 'dept-sausage' },
             { id: 'sausage_2', name: 'พัชรี สุขแสวง', dept: 'ไส้กรอก-แฮม', class: 'dept-sausage' },
-            // แผนกอาหารญี่ปุ่น
             { id: 'sushi_1', name: 'ศิริธร ชัยเวทย์', dept: 'อาหารญี่ปุ่น', class: 'dept-sushi' },
             { id: 'sushi_2', name: 'ธีรวัฒน์ บัวแก้ว', dept: 'อาหารญี่ปุ่น', class: 'dept-sushi' },
-            // แผนกผักผลไม้
             { id: 'veggie_1', name: 'ฮาบีบะ โดโซมิ', dept: 'ผักผลไม้', class: 'dept-veggie' },
             { id: 'veggie_2', name: 'มารีนา ดั้นดี', dept: 'ผักผลไม้', class: 'dept-veggie' },
-            // แผนกเบเกอรี่
             { id: 'bakery_1', name: 'สรินยา สาริยา', dept: 'เบเกอรี่', class: 'dept-bakery' },
-            // แผนกนม-ชีส
             { id: 'dairy_1', name: 'นาศริญ โมง', dept: 'นม-ชีส', class: 'dept-dairy' },
             { id: 'dairy_2', name: 'อัสวาน อาแว', dept: 'นม-ชีส', class: 'dept-dairy' },
-            // แผนกเนื้อ
             { id: 'meat_1', name: 'จักรกริช สมาน', dept: 'เนื้อ', class: 'dept-meat' },
-            // แผนกซีฟู้ด
             { id: 'seafood_1', name: 'อิสมาแอ สาเล็ง', dept: 'ซีฟู้ด', class: 'dept-seafood' },
         ];
         
@@ -277,7 +289,7 @@
             return new Date().toISOString().split('T')[0];
         }
 
-        // --- ฟังก์ชันจัดการ Local Storage และสถานะ ---
+        // --- ฟังก์ชันจัดการ Local Storage และสถานะ (ไม่เปลี่ยนแปลง) ---
         
         function getInitialStatus() {
             return { 
@@ -307,7 +319,7 @@
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allStatuses));
         }
 
-        // --- ฟังก์ชันรีเซ็ตและบันทึกประวัติ ---
+        // --- ฟังก์ชันรีเซ็ตและบันทึกประวัติ (ไม่เปลี่ยนแปลง) ---
         
         function resetAllStatusesWithCode() {
             const inputCode = prompt("กรุณาป้อนรหัสผ่านเพื่อรีเซ็ตสถานะทั้งหมด:");
@@ -355,7 +367,7 @@
             }
         }
         
-        // --- ฟังก์ชันแสดงประวัติย้อนหลัง ---
+        // --- ฟังก์ชันแสดงประวัติย้อนหลัง (ไม่เปลี่ยนแปลง) ---
         
         function showHistory() {
             const historyData = localStorage.getItem(HISTORY_KEY);
@@ -396,7 +408,7 @@
             document.getElementById('historyModal').style.display = "none";
         }
 
-        // --- ฟังก์ชันอัปเดต UI ---
+        // --- ฟังก์ชันอัปเดต UI (ไม่เปลี่ยนแปลงในส่วนการทำงาน) ---
 
         function updateTable() {
             const tbody = document.querySelector('#statusTable tbody');
@@ -408,15 +420,12 @@
                 const status = allStatuses[emp.id];
                 const row = tbody.insertRow();
                 
-                // *** เพิ่ม Class สำหรับสีพื้นหลังแถว ***
                 row.className = emp.class;
 
                 const statusClass = status.isAvailable ? 'status-available' : 'status-lunch';
                 const statusText = status.isAvailable ? 'พร้อมทำงาน' : 'พักเที่ยง';
                 
-                // *** แสดงเฉพาะชื่อพนักงาน (ไม่มีอิโมจิ) ***
                 row.insertCell().textContent = emp.name;
-                
                 row.insertCell().textContent = emp.dept;
                 
                 const statusCell = row.insertCell();
@@ -444,7 +453,7 @@
             }
         }
 
-        // --- ฟังก์ชันหลักในการทำงาน ---
+        // --- ฟังก์ชันหลักในการทำงาน (ไม่เปลี่ยนแปลง) ---
         
         function toggleStatus(employeeId, nextStatus) {
             const now = new Date().toISOString(); 
